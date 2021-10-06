@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+
+    <style>
+        div{
+            margin: 0 auto;
+            border: #9F9F9F solid 2px;
+            width: 350px;
+            height: 250px;
+        }
+        #tt{
+            font-family: verdana,arial,sans-serif;
+            font-size:11px;
+            color:#333333;
+            border-width: 2px;
+            border-color: #666666;
+            border-collapse: collapse;
+            margin: 0 auto;
+        }
+        table td {
+            border-width: 2px;
+            padding: 8px;
+            border-style: dashed;
+            border-color: #666666;
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+<div>
+    <table id="tt">
+        <p></p>
+        <caption>员工管理</caption>
+        <tr>
+            <td>员工编号</td>
+            <td>
+                <input id="empnum" type="text" name="empnum">
+            </td>
+        </tr>
+        <tr>
+            <td>员工姓名</td>
+            <td>
+                <input id="empName" type="text" name="empname">
+            </td>
+        </tr>
+        <tr>
+            <td>员工性别</td>
+            <td>
+                <input type="radio" name="sex" value="男">男
+                <input type="radio" name="sex" value="女">女
+            </td>
+        </tr>
+        <tr>
+            <td>所属的一级单位</td>
+            <td>
+                <select id="oneselect"  name="parentnum" onchange="Onedept()">
+                    <option value="0">请选择</option>
+                    <option id="op1" value="1">市交通局</option>
+                    <option  id="op2" value="2">市城管局</option>
+
+            </select>
+            </td>
+        </tr>
+        <tr>
+            <td>所属单位</td>
+            <td>
+            <select id="twoselect">
+            </select>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" align="center">
+                    <input id="addEmp" type="submit" value="添加" style="text-align: center"/>
+            </td>
+        </tr>
+
+    </table>
+
+</div>
+
+<script>
+    function Onedept() {
+        $.ajax({
+            url: '/api/dept/selectAll',
+            type: 'post',
+            dataType: 'json',
+            success: function (res) {
+                console.log(res);
+                console.log(res.depts);
+                // 一级菜单 选中的状态
+              var oneSelect=$('#oneselect option:selected').val();
+              console.log(oneSelect);
+              var select=$("#twoselect");
+                $("#twoselect").empty();//把下拉框下面的数据清空
+                if (oneSelect == 1) {
+                    $.each(res.depts, function (index, item) {
+                        console.log(item.parentnum);
+                        if (item.parentnum == 1) {
+                            var optionDom = $("<option value='"+item.deptnum+"'>" + item.deptname + "</option>")
+                            $("#twoselect").append(optionDom);//ajax异步下拉框
+                        }
+                    });
+                } else {
+                    $.each(res.depts, function (index, item) {
+                        console.log(item.parentnum);
+                        if (item.parentnum == 2) {
+                            var optionDom = $("<option value='"+item.deptnum+"'>" + item.deptname + "</option>")
+                            $("#twoselect").append(optionDom);//ajax异步下拉框
+                        }
+                    });
+                }
+            }
+        });
+    }
+    //检测是否重名
+    $("#empName").blur(function(){
+        $.ajax({
+            url: '/api/emp/selectAll',
+            type: 'post',
+            dataType: 'json',
+            success: function (res) {
+                console.log(res.emps)
+                $.each(res.emps, function (index, item) {
+                    var empName=$('#empName').val();
+                    console.log(item.empname);
+                    var empname=item.empname;
+                    if (empname == empName) {
+                        alert("该用户名重名了，请您换一个吧！")
+                    }
+                });
+            }
+    });
+    });
+
+
+    $("#addEmp").click(function () {
+        // 创建 emp集合， 获取所有的数据
+        var emp = {};
+        emp.empnum = $('#empnum').val();
+        emp.empname = $('#empName').val();
+        emp.empsex = $('input[name="sex"]:checked').val();
+        emp.deptnum = $("#twoselect").find("option:selected").val();
+        emp.parentnum=$("#oneselect").find("option:selected").val();
+        $.ajax({
+            url: '/api/emp/insert',
+            type: 'post',
+            data: JSON.stringify(emp),
+            dataType: 'json',
+            contentType:"application/json;charset=UTF-8",
+            success: function (res) {
+                console.log(res);
+                    if(res.code == 200){
+                        alert(res.msg);
+                    }else{
+                    alert("添加失败");
+            }
+                    location.reload();
+        }
+        });
+    });
+
+</script>
+
+
+</body>
+</html>
